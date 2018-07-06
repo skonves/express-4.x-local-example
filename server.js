@@ -1,4 +1,5 @@
 var express = require('express');
+var context = require('express-http-context');
 var passport = require('passport');
 var Strategy = require('passport-local').Strategy;
 var db = require('./db');
@@ -44,6 +45,17 @@ passport.deserializeUser(function(id, cb) {
 
 // Create a new Express application.
 var app = express();
+app.use(context.middleware);
+
+app.use((req, res, next) => {
+  context.set('param1', 'value1');
+  next();
+});
+
+app.use(function(req, res, next) {
+  context.set('param2', 'value2');
+  next();
+})
 
 // Configure view engine to render EJS templates.
 app.set('views', __dirname + '/views');
@@ -61,9 +73,23 @@ app.use(require('express-session')({ secret: 'keyboard cat', resave: false, save
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req, res, next) => {
+  console.log('param1 (fat arrow)', context.get('param1'));
+  console.log('param2 (fat arrow)', context.get('param2'));
+  next();
+});
+
+app.use(function(req, res, next) {
+  console.log('param1 (function)', context.get('param1'));
+  console.log('param2 (function)', context.get('param2'));
+  next();
+});
+
 // Define routes.
 app.get('/',
   function(req, res) {
+    console.log('param1 (/)', context.get('param1'));
+    console.log('param2 (/)', context.get('param2'));
     res.render('home', { user: req.user });
   });
 
